@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MPPCS 2026 - Unit 1 History</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root { --tcs-blue: #1e88e5; --tcs-dark: #003366; --ans: #27ae60; --rev: #8e44ad; --not-ans: #e74c3c; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f0f2f5; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        header { background: var(--tcs-dark); color: white; padding: 0 15px; display: flex; justify-content: space-between; align-items: center; height: 50px; flex-shrink: 0; }
+        #instruction-page { position: fixed; inset: 0; background: white; z-index: 2000; padding: 20px; overflow-y: auto; text-align: center; }
+        .main-wrapper { display: flex; flex: 1; overflow: hidden; position: relative; }
+        .content-area { flex: 1; padding: 20px; overflow-y: auto; background: white; padding-bottom: 100px; }
+        .q-title { font-weight: bold; color: var(--tcs-dark); border-bottom: 1px solid #ddd; padding-bottom: 5px; display: block; margin-bottom: 15px; }
+        .opt-label { display: block; padding: 15px; margin: 12px 0; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+        .selected { background: #e3f2fd !important; border-color: var(--tcs-blue) !important; font-weight: bold; }
+        #palette-panel { width: 280px; background: #f8f9fa; border-left: 1px solid #ccc; padding: 15px; position: absolute; right: 0; height: 100%; transition: 0.3s; z-index: 100; }
+        #palette-panel.closed { transform: translateX(100%); }
+        .toggle-btn { position: absolute; left: -35px; top: 100px; background: var(--tcs-dark); color: white; border: none; padding: 12px 8px; cursor: pointer; border-radius: 5px 0 0 5px; }
+        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 15px; }
+        .dot { width: 42px; height: 42px; border: 1px solid #999; background: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); }
+        .ans-dot { background: var(--ans) !important; color: white; border: none; }
+        .rev-dot { background: var(--rev) !important; color: white; border: none; }
+        .not-ans-dot { background: var(--not-ans) !important; color: white; border: none; }
+        .active-dot { border: 3px solid #000 !important; }
+        footer { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; padding: 10px; border-top: 2px solid #ddd; display: flex; gap: 8px; height: 70px; align-items: center; z-index: 150; }
+        .btn { padding: 12px 5px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.8rem; flex: 1; }
+        .btn-save { background: var(--ans); color: white; }
+        .btn-review { background: #f39c12; color: white; }
+        .btn-clear { background: #eee; }
+        .btn-submit { background: var(--tcs-blue); color: white; }
+        #result-page { display: none; padding: 20px; background: white; position: fixed; inset: 0; z-index: 3000; overflow-y: auto; }
+        .explanation { background: #f0f8ff; padding: 10px; border-left: 4px solid var(--tcs-blue); margin-top: 10px; font-size: 0.9rem; }
+        @media (max-width: 600px) { #palette-panel { width: 240px; } }
+    </style>
+</head>
+<body>
+
+<div id="instruction-page">
+    <h2>Unit 1: History of India (Mock)</h2>
+    <p>Questions: 25 | Time: 30 Min</p>
+    <button class="btn-save" style="width:200px; height:50px; border:none; border-radius:5px; font-weight:bold; cursor:pointer;" onclick="startTest()">START TEST</button>
+</div>
+
+<header>
+    <div>UNIT 1: HISTORY</div>
+    <div id="timer">30:00</div>
+</header>
+
+<div class="main-wrapper">
+    <div class="content-area" id="scroll-area">
+        <span class="q-title" id="q-num">Question 1</span>
+        <div id="q-text" style="font-size: 1.1rem; margin-bottom: 20px;"></div>
+        <div id="options-box"></div>
+    </div>
+
+    <div id="palette-panel" class="closed">
+        <button class="toggle-btn" onclick="togglePalette()">◄<br>P<br>A<br>L</button>
+        <h4 style="margin:0;">Palette</h4>
+        <div class="grid" id="palette-grid"></div>
+    </div>
+</div>
+
+<footer>
+    <button class="btn btn-review" onclick="handleAction('review')">Review</button>
+    <button class="btn btn-clear" onclick="handleAction('clear')">Clear</button>
+    <button class="btn btn-save" onclick="handleAction('save')">Save & Next</button>
+    <button class="btn btn-submit" onclick="finishExam()">Submit</button>
+</footer>
+
+<div id="result-page">
+    <h2 style="text-align:center;">Scorecard</h2>
+    <div style="max-width:300px; margin:auto;"><canvas id="chart"></canvas></div>
+    <div id="score-text" style="text-align:center; font-size:1.2rem; margin:20px;"></div>
+    <div id="ans-sheet"></div>
+    <button class="btn-save" style="width:100%; padding:15px; margin-bottom:50px; border:none;" onclick="location.reload()">RETAKE</button>
+</div>
+
+<script>
+    const questions = [
+        {q: "प्रजापति की दो पुत्रियाँ किसे कहा गया है?", o: ["सभा और समिति", "सभा और विदथ", "समिति और संघ", "ऋचा और साम"], a: 0, e: "अथर्ववेद में सभा और समिति को प्रजापति की दो पुत्रियाँ कहा गया है।"},
+        {q: "अशोक का व्यक्तिगत नाम किस लघु शिलालेख में मिलता है?", o: ["रूपनाथ", "गुजरा", "सारो-मारो", "पानगुराड़िया"], a: 1, e: "अशोक का नाम 'अशोक' गुजरा (दतिया) और मस्की शिलालेखों में मिलता है।"},
+        {q: "तेभागा आन्दोलन कब प्रारम्भ हुआ था?", o: ["सितम्बर 1946", "अगस्त 1945", "जनवरी 1938", "मार्च 1935"], a: 0, e: "तेभागा आंदोलन 1946 में बंगाल के बटाईदारों द्वारा शुरू किया गया था।"},
+        {q: "चारों आश्रमों का उल्लेख सर्वप्रथम किस ग्रन्थ में मिला?", o: ["ऋग्वेद", "छांदोग्योपनिषद", "जाबालोपनिषद", "मनुस्मृति"], a: 2, e: "जाबालोपनिषद में पहली बार चारों आश्रमों (ब्रह्मचर्य, गृहस्थ, वानप्रस्थ, संन्यास) का उल्लेख मिलता है।"},
+        {q: "कृष्ण-बलराम का अंकन किस हिन्द-यवन शासक के सिक्कों पर है?", o: ["मेनान्डर", "डेमेट्रियस", "अगाथोक्लिज़", "युक्रेटाइड्स"], a: 2, e: "अगाथोक्लिज़ की मुद्राओं पर कृष्ण और बलराम के चित्र मिलते हैं।"},
+        {q: "एकमात्र महिला आलवार संत कौन थीं?", o: ["अक्का महादेवी", "पेरुमल", "तिरुपान", "आण्डाल"], a: 3, e: "आण्डाल (गोदा) दक्षिण की एकमात्र महिला आलवार संत थीं।"},
+        {q: "भारतवर्ष का उल्लेख किस अभिलेख में सर्वप्रथम हुआ?", o: ["अयोध्या अभिलेख", "एरण अभिलेख", "हाथीगुम्फा अभिलेख", "प्रयाग प्रशस्ति"], a: 2, e: "खारवेल के हाथीगुम्फा अभिलेख में सर्वप्रथम भारतवर्ष शब्द का उल्लेख है।"},
+        {q: "'द फिलांसफी ऑफ द बॉम्ब' किसने लिखा?", o: ["भगत सिंह", "यशपाल", "भगवती चरण वोहरा", "चंद्रशेखर आजाद"], a: 2, e: "आजाद के कहने पर भगवती चरण वोहरा ने यह दस्तावेज तैयार किया था।"},
+        {q: "ऋग्वेद में 'अघन्या' शब्द किसके लिए प्रयुक्त है?", o: ["स्त्री", "गाय", "पुरोहित", "अतिथि"], a: 1, e: "अघन्या (न मारने योग्य) शब्द गाय के लिए प्रयुक्त हुआ है।"},
+        {q: "पानीपत का तीसरा युद्ध कब हुआ?", o: ["1761", "1526", "1556", "1757"], a: 0, e: "14 जनवरी 1761 को मराठों और अहमद शाह अब्दाली के बीच हुआ।"},
+        {q: "सत्यमेव जयते किस उपनिषद से लिया गया है?", o: ["कठोपनिषद", "मुण्डकोपनिषद", "केनोपनिषद", "ईशोपनिषद"], a: 1, e: "यह मुण्डकोपनिषद से लिया गया है।"},
+        {q: "पुराणों की संख्या कितनी है?", o: ["12", "16", "18", "20"], a: 2, e: "कुल 18 महापुराण हैं।"},
+        {q: "फाह्यान किसके शासनकाल में भारत आया?", o: ["हर्षवर्धन", "चंद्रगुप्त द्वितीय", "समुद्रगुप्त", "अशोक"], a: 1, e: "फाह्यान चंद्रगुप्त द्वितीय (विक्रमादित्य) के काल में आया था।"},
+        {q: "हर्षचरित के लेखक कौन हैं?", o: ["हर्षवर्धन", "बाणभट्ट", "कालिदास", "भारवि"], a: 1, e: "बाणभट्ट राजा हर्षवर्धन के दरबारी कवि थे।"},
+        {q: "चम्पारण सत्याग्रह कब हुआ?", o: ["1915", "1916", "1917", "1918"], a: 2, e: "गांधीजी का भारत में पहला सत्याग्रह 1917 में बिहार के चम्पारण में हुआ।"},
+        {q: "अजंता की गुफाएं किस धर्म से संबंधित हैं?", o: ["जैन", "बौद्ध", "हिन्दू", "सिख"], a: 1, e: "ये मुख्य रूप से बौद्ध धर्म (जातक कथाएं) से संबंधित हैं।"},
+        {q: "लोथल किस राज्य में स्थित है?", o: ["हरियाणा", "पंजाब", "राजस्थान", "गुजरात"], a: 3, e: "लोथल सिंधु घाटी सभ्यता का पत्तन (Port) नगर गुजरात में था।"},
+        {q: "कलिंग युद्ध का वर्णन अशोक के किस शिलालेख में है?", o: ["10वें", "11वें", "12वें", "13वें"], a: 3, e: "13वें शिलालेख में कलिंग विजय और अशोक के हृदय परिवर्तन का वर्णन है।"},
+        {q: "विजयनगर साम्राज्य की स्थापना किसने की?", o: ["कृष्णदेव राय", "हरिहर और बुक्का", "राजराज", "देवराय प्रथम"], a: 1, e: "1336 में हरिहर और बुक्का नामक दो भाइयों ने की थी।"},
+        {q: "सहायक संधि (Subsidiary Alliance) किसने शुरू की?", o: ["डलहौजी", "वेलेस्ली", "कर्जन", "बेंटिक"], a: 1, e: "लॉर्ड वेलेस्ली ने भारतीय राज्यों को नियंत्रण में लेने हेतु इसे शुरू किया।"},
+        {q: "कांग्रेस के प्रथम मुस्लिम अध्यक्ष कौन थे?", o: ["जिन्ना", "आजाद", "बदरुद्दीन तैयबजी", "सैयद अहमद"], a: 2, e: "बदरुद्दीन तैयबजी 1887 के मद्रास अधिवेशन में अध्यक्ष बने।"},
+        {q: "सिन्धु सभ्यता में विशाल स्नानागार कहाँ मिला?", o: ["हड़प्पा", "लोथल", "मोहनजोदड़ो", "कालीबंगा"], a: 2, e: "विशाल स्नानागार मोहनजोदड़ो में पाया गया।"},
+        {q: "विक्रम संवत कब शुरू हुआ?", o: ["78 AD", "57 BC", "319 AD", "248 AD"], a: 1, e: "विक्रम संवत 57 ईसा पूर्व (BC) में शुरू हुआ था।"},
+        {q: "तराइन का प्रथम युद्ध किसके बीच हुआ?", o: ["गोरी-पृथ्वीराज", "गोरी-जयचंद", "बाबर-इब्राहिम", "अकबर-हेमू"], a: 0, e: "1191 में मुहम्मद गोरी और पृथ्वीराज चौहान के बीच हुआ।"},
+        {q: "आर्य समाज की स्थापना किसने की?", o: ["राजा राममोहन राय", "स्वामी दयानंद", "विवेकानंद", "ज्योतिबा फुले"], a: 1, e: "1875 में स्वामी दयानंद सरस्वती ने मुंबई में की थी।"}
+    ];
+
+    let current = 0, userAns = new Array(questions.length).fill(null);
+
+    function startTest() { document.getElementById('instruction-page').style.display = 'none'; initPal(); loadQ(); }
+    function initPal() { 
+        const g = document.getElementById('palette-grid');
+        questions.forEach((_,i)=>{
+            const d = document.createElement('div'); d.className='dot'; d.id='dot-'+i; d.innerText=i+1;
+            d.onclick=()=>{current=i; loadQ(); togglePalette();}; g.appendChild(d);
+        });
+    }
+    function loadQ() {
+        const q = questions[current]; document.getElementById('q-num').innerText = `Question ${current+1}`;
+        document.getElementById('q-text').innerText = q.q;
+        const box = document.getElementById('options-box'); box.innerHTML = '';
+        q.o.forEach((opt,i)=>{
+            const l = document.createElement('label'); l.className = `opt-label ${userAns[current]===i?'selected':''}`;
+            l.innerHTML = `<input type="radio" style="display:none" onchange="userAns[${current}]=${i}; loadQ()"> ${opt}`;
+            box.appendChild(l);
+        });
+        document.querySelectorAll('.dot').forEach(d=>d.classList.remove('active-dot'));
+        document.getElementById('dot-'+current).classList.add('active-dot');
+        document.getElementById('scroll-area').scrollTop = 0;
+    }
+    function handleAction(t) {
+        const d = document.getElementById('dot-'+current);
+        if(t==='save') { d.className = userAns[current]!==null?'dot ans-dot':'dot not-ans-dot'; if(current<questions.length-1){current++; loadQ();} }
+        else if(t==='review') { d.className = 'dot rev-dot'; if(current<questions.length-1){current++; loadQ();} }
+        else if(t==='clear') { userAns[current]=null; d.className='dot'; loadQ(); }
+    }
+    function togglePalette() { document.getElementById('palette-panel').classList.toggle('closed'); }
+    function finishExam() {
+        if(!confirm("Submit Test?")) return;
+        document.getElementById('result-page').style.display = 'block';
+        let c=0, w=0;
+        const sheet = document.getElementById('ans-sheet');
+        questions.forEach((q,i)=>{
+            const correct = userAns[i]===q.a; if(userAns[i]!==null) correct?c++:w++;
+            sheet.innerHTML += `<div style="padding:10px; border-bottom:1px solid #eee">
+                <b>Q${i+1}: ${q.q}</b><br><span style="color:green">✔ ${q.o[q.a]}</span><br>
+                <span style="color:${correct?'green':'red'}">✖ Your: ${userAns[i]!==null?q.o[userAns[i]]:'Skipped'}</span>
+                <div class="explanation"><b>Fact:</b> ${q.e}</div></div>`;
+        });
+        document.getElementById('score-text').innerHTML = `Final Score: <b>${c*2}</b> / ${questions.length*2}`;
+        new Chart(document.getElementById('chart'), {type:'doughnut', data:{labels:['Correct','Wrong','Skipped'], datasets:[{data:[c,w,questions.length-(c+w)], backgroundColor:['#27ae60','#e74c3c','#bdc3c7']}]}});
+    }
+</script>
+</body>
+</html>
