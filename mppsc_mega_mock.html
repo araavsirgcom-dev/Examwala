@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MPPCS 2026 - Mega Mock Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root { --tcs-blue: #1e88e5; --tcs-dark: #003366; --ans: #27ae60; --rev: #8e44ad; --not-ans: #e74c3c; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f0f2f5; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        header { background: var(--tcs-dark); color: white; padding: 0 15px; display: flex; justify-content: space-between; align-items: center; height: 50px; flex-shrink: 0; }
+        #instruction-page { position: fixed; inset: 0; background: white; z-index: 2000; padding: 20px; overflow-y: auto; text-align: center; }
+        .main-wrapper { display: flex; flex: 1; overflow: hidden; position: relative; }
+        .content-area { flex: 1; padding: 20px; overflow-y: auto; background: white; padding-bottom: 100px; }
+        .q-title { font-weight: bold; color: var(--tcs-dark); border-bottom: 1px solid #ddd; padding-bottom: 5px; display: block; margin-bottom: 15px; }
+        .opt-label { display: block; padding: 15px; margin: 12px 0; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+        .selected { background: #e3f2fd !important; border-color: var(--tcs-blue) !important; font-weight: bold; }
+        #palette-panel { width: 280px; background: #f8f9fa; border-left: 1px solid #ccc; padding: 15px; position: absolute; right: 0; height: 100%; transition: 0.3s; z-index: 100; }
+        #palette-panel.closed { transform: translateX(100%); }
+        .toggle-btn { position: absolute; left: -35px; top: 100px; background: var(--tcs-dark); color: white; border: none; padding: 12px 8px; cursor: pointer; border-radius: 5px 0 0 5px; }
+        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 15px; }
+        .dot { width: 42px; height: 42px; border: 1px solid #999; background: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); }
+        .ans-dot { background: var(--ans) !important; color: white; border: none; }
+        .rev-dot { background: var(--rev) !important; color: white; border: none; }
+        .not-ans-dot { background: var(--not-ans) !important; color: white; border: none; }
+        .active-dot { border: 3px solid #000 !important; }
+        footer { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; padding: 10px; border-top: 2px solid #ddd; display: flex; gap: 8px; height: 70px; align-items: center; z-index: 150; }
+        .btn { padding: 12px 5px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.8rem; flex: 1; }
+        .btn-save { background: var(--ans); color: white; }
+        .btn-review { background: #f39c12; color: white; }
+        .btn-clear { background: #eee; }
+        .btn-submit { background: var(--tcs-blue); color: white; }
+        #result-page { display: none; padding: 20px; background: white; position: fixed; inset: 0; z-index: 3000; overflow-y: auto; }
+        .explanation { background: #f0f8ff; padding: 10px; border-left: 4px solid var(--tcs-blue); margin-top: 10px; font-size: 0.9rem; }
+        @media (max-width: 600px) { #palette-panel { width: 240px; } }
+    </style>
+</head>
+<body>
+
+<div id="instruction-page">
+    <h2>MPPCS 2026: Mega Full Mock Test</h2>
+    <p>कुल प्रश्न: 74 | समय: 90 मिनट</p>
+    <ul style="text-align:left; display:inline-block;">
+        <li>सभी प्रश्न अनिवार्य हैं।</li>
+        <li>प्रत्येक सही उत्तर के लिए 2 अंक।</li>
+        <li>TCS पैटर्न आधारित इंटरफेस।</li>
+    </ul><br><br>
+    <button class="btn-save" style="width:200px; height:50px; border:none; border-radius:5px; font-weight:bold; cursor:pointer;" onclick="startTest()">START TEST</button>
+</div>
+
+<header>
+    <div id="title">MEGA MOCK TEST</div>
+    <div id="timer">90:00</div>
+</header>
+
+<div class="main-wrapper">
+    <div class="content-area" id="scroll-area">
+        <span class="q-title" id="q-num">Question 1</span>
+        <div id="q-text" style="font-size: 1.1rem; margin-bottom: 20px;"></div>
+        <div id="options-box"></div>
+    </div>
+
+    <div id="palette-panel" class="closed">
+        <button class="toggle-btn" onclick="togglePalette()">◄<br>P<br>A<br>L</button>
+        <h4 style="margin:0;">Palette</h4>
+        <div class="grid" id="palette-grid"></div>
+    </div>
+</div>
+
+<footer>
+    <button class="btn btn-review" onclick="handleAction('review')">Review</button>
+    <button class="btn btn-clear" onclick="handleAction('clear')">Clear</button>
+    <button class="btn btn-save" onclick="handleAction('save')">Save & Next</button>
+    <button class="btn btn-submit" onclick="finishExam()">Submit</button>
+</footer>
+
+<div id="result-page">
+    <h2 style="text-align:center;">Your Performance</h2>
+    <div style="max-width:300px; margin:auto;"><canvas id="chart"></canvas></div>
+    <div id="score-text" style="text-align:center; font-size:1.2rem; margin:20px;"></div>
+    <hr>
+    <div id="ans-sheet"></div>
+    <button class="btn-save" style="width:100%; padding:15px; margin-bottom:50px; border:none;" onclick="location.reload()">RETAKE TEST</button>
+</div>
+
+<script>
+    const questions = [
+        {q: "कुमाऊँ हिमालय का सबसे ऊँचा शिखर कौन-सा है?", o: ["कामेट", "नंदा देवी", "त्रिशूल", "बद्रीनाथ"], a: 1, e: "नंदा देवी (7816 मीटर) कुमाऊँ हिमालय की सबसे ऊँची चोटी है। [cite: 249, 250]"},
+        {q: "निम्नलिखित में से कौन-सी नदी का प्राचीन नाम अस्किनी था?", o: ["ब्यास", "चिनाब", "झेलम", "रावी"], a: 1, e: "चिनाब नदी का प्राचीन नाम अस्किनी था। [cite: 252, 253]"},
+        {q: "भारत वन स्थिति रिपोर्ट 2023 के अनुसार वनों के अंतर्गत देश के शीर्ष तीन राज्य कौन-से हैं?", o: ["MP, झारखंड, छत्तीसगढ़", "MP, अरुणाचल, छत्तीसगढ़", "MP, अरुणाचल, सिक्किम", "MP, महाराष्ट्र, ओडिशा"], a: 1, e: "शीर्ष तीन राज्य मध्य प्रदेश, अरुणाचल प्रदेश और छत्तीसगढ़ हैं। [cite: 255, 256]"},
+        {q: "पश्चिमी विक्षोभ के बारे में सही कथन चुनें: (a) पछुआ हवाओं से चलते हैं (b) भूमध्यसागर से नमी लाते हैं (c) उत्तर-पश्चिमी भारत में वर्षा कराते हैं।", o: ["केवल (c)", "केवल (a) और (c)", "केवल (b) और (c)", "सभी (a), (b) और (c)"], a: 3, e: "पश्चिमी विक्षोभ भूमध्यसागर से नमी लाकर शीत ऋतु में वर्षा कराते हैं। [cite: 257, 258]"},
+        {q: "भारत की सबसे लम्बी झील कौन-सी है?", o: ["चिल्का", "कोल्लेरू", "वेम्बनाड", "पूकोड"], a: 2, e: "केरल की वेम्बनाड झील (96 किमी) भारत की सबसे लंबी झील है। [cite: 259, 260]"},
+        {q: "खनिज वर्ष पुस्तक 2022 के अनुसार मैंगनीज उत्पादन में कौन-सा राज्य द्वितीय स्थान पर था?", o: ["ओडिशा", "कर्नाटक", "महाराष्ट्र", "मध्य प्रदेश"], a: 3, e: "मैंगनीज उत्पादन में मध्य प्रदेश दूसरे स्थान पर था। [cite: 262, 263]"},
+        {q: "2023-24 में चावल उत्पादन के आधार पर राज्यों का सही आरोही क्रम (Top 4) क्या है?", o: ["पंजाब, तेलंगाना, UP, WB", "पंजाब, WB, UP, तेलंगाना", "ओडिशा, तेलंगाना, पंजाब, UP", "WB, तेलंगाना, पंजाब, UP"], a: 0, e: "क्रम: पश्चिम बंगाल (1), उत्तर प्रदेश (2), पंजाब (3) और तेलंगाना (4)। [cite: 265, 266]"},
+        {q: "अक्टूबर 2025 में किस चक्रवाती तूफान ने भारत के पूर्वी तट को प्रभावित किया?", o: ["फेंगल", "शक्ति", "मोंथा", "असना"], a: 0, e: "चक्रवात फेंगल ने अक्टूबर 2025 में पूर्वी तटीय भागों को प्रभावित किया। [cite: 268, 269]"},
+        {q: "2011 की जनगणना के अनुसार किस राज्य का जनसंख्या घनत्व न्यूनतम था?", o: ["मेघालय", "मिजोरम", "अरूणाचल प्रदेश", "मणिपुर"], a: 2, e: "अरुणाचल प्रदेश का घनत्व मात्र 17 व्यक्ति प्रति वर्ग किमी था। [cite: 270, 271]"},
+        {q: "दिसम्बर 2025 तक नवीकरणीय ऊर्जा क्षमता में राज्यों का सही आरोही क्रम क्या था?", o: ["गुजरात, राजस्थान, तमिलनाडु, महाराष्ट्र", "कर्नाटक, महाराष्ट्र, राजस्थान, गुजरात", "तमिलनाडु, महाराष्ट्र, राजस्थान, गुजरात", "कर्नाटक, महाराष्ट्र, गुजरात, राजस्थान"], a: 2, e: "राजस्थान प्रथम, गुजरात द्वितीय और कर्नाटक तृतीय स्थान पर था। [cite: 273, 274]"},
+        {q: "भारतीय संविधान सभा के सदस्यों का निर्वाचन कैसे हुआ था?", o: ["प्रत्यक्ष रूप से", "प्रांतीय विधान सभाओं द्वारा अप्रत्यक्ष रूप से", "गवर्नर-जनरल द्वारा", "कांग्रेस समितियों द्वारा"], a: 1, e: "सदस्य प्रांतीय विधान सभाओं द्वारा अप्रत्यक्ष रूप से चुने गए थे। [cite: 276, 277]"},
+        {q: "उच्चतम न्यायालय के न्यायाधीशों की सेवा शर्तें किस अनुच्छेद द्वारा निर्धारित की जाती हैं?", o: ["129(3)", "127(4)", "122(1)", "124(2)"], a: 3, e: "अनुच्छेद 124(2) के तहत नियुक्ति और सेवा शर्तों का प्रावधान है। [cite: 279, 280]"},
+        {q: "लोकसभा और राज्यसभा को किस कार्य में समान अधिकार प्राप्त है?", o: ["धन विधेयक", "नई अखिल भारतीय सेवा", "अविश्वास प्रस्ताव", "संविधान संशोधन विधेयक"], a: 3, e: "संविधान संशोधन में दोनों सदनों की शक्तियां समान हैं। [cite: 282, 283]"},
+        {q: "मध्य प्रदेश में ग्राम पंचायत का अनिवार्य कार्य कौन सा नहीं है?", o: ["सम्पत्ति का परिरक्षण", "सहकारिता का परिवर्धन", "लावारिस जानवरों को पकड़ना", "पुलिस स्टेशन का संचालन"], a: 3, e: "पुलिस स्टेशन राज्य सरकार के अधीन होता है। [cite: 285, 286]"},
+        {q: "मध्य प्रदेश में नगर पंचायत का गठन किस क्षेत्र के लिए किया जाता है?", o: ["संक्रमणशील नगरीय क्षेत्र", "लघुस्तरीय क्षेत्र", "औद्योगिक क्षेत्र", "वृहत नगरीय क्षेत्र"], a: 0, e: "ग्रामीण से नगरीय में बदलते (transitional) क्षेत्रों के लिए। [cite: 288, 289]"},
+        {q: "राज्यपाल के बारे में कौन-सा कथन गलत है?", o: ["राष्ट्रपति नियुक्ति करते हैं", "राज्यपाल HC जजों की नियुक्ति करते हैं", "आपातकाल में राष्ट्रपति प्रतिनिधि", "राज्य कार्यपालिका के प्रधान"], a: 1, e: "HC न्यायाधीशों की नियुक्ति राष्ट्रपति करते हैं। [cite: 291, 292]"},
+        {q: "42वें संशोधन द्वारा नीति निदेशक सिद्धांतों में कौन-सा अनुच्छेद नहीं जोड़ा गया?", o: ["39A", "43A", "43B", "48A"], a: 2, e: "अनुच्छेद 43B इसमें शामिल नहीं था। [cite: 294, 296]"},
+        {q: "संविधान संशोधन के अधिकार को प्रथम चुनौती किस केस में मिली?", o: ["केशवानंद भारती", "गोलकनाथ", "चम्पकम दोरैराजन", "शंकरी प्रसाद"], a: 3, e: "प्रथम चुनौती 1951 के शंकरी प्रसाद केस में मिली। [cite: 297, 298]"},
+        {q: "मध्य प्रदेश विधानसभा सत्रों के बारे में कौन सा असत्य है?", o: ["न्यूनतम दो अधिवेशन", "6 माह से अधिक का अंतर नहीं", "राज्यपाल सत्र बुलाते हैं", "अध्यक्ष सत्र समाप्त करते हैं"], a: 3, e: "सत्र समाप्त (Prorogue) करने का अधिकार राज्यपाल को है। [cite: 299, 300]"},
+        {q: "किस आयोग को एंग्लो-इंडियन समुदाय के अधिकारों की रक्षा का दायित्व दिया गया है?", o: ["राष्ट्रीय SC आयोग", "राष्ट्रीय ST आयोग", "राष्ट्रीय OBC आयोग", "राष्ट्रीय मानवाधिकार आयोग"], a: 0, e: "राष्ट्रीय अनुसूचित जाति आयोग को यह दायित्व दिया गया है। [cite: 302, 303]"},
+        {q: "2020 में भारत में 5 वर्ष से कम आयु के शिशुओं की मृत्यु दर (U5MR) क्या थी?", o: ["26", "32", "41", "54"], a: 1, e: "SRS 2020 के अनुसार यह दर 32 प्रति हजार थी। [cite: 305, 306]"},
+        {q: "सतत् विकास 2030 एजेंडा में कुल कितने 'लक्ष्य' (Targets) निर्धारित हैं?", o: ["116", "132", "154", "169"], a: 3, e: "17 SDGs और 169 Targets निर्धारित किए गए हैं। [cite: 308, 309]"},
+        {q: "यदि एक माता-पिता सिकल सेल रोगी (SS) और दूसरा वाहक (AS) हो, तो कितने बच्चे वाहक होंगे?", o: ["25%", "50%", "75%", "100%"], a: 1, e: "ऐसी स्थिति में 50% बच्चे वाहक होंगे। [cite: 311, 312]"},
+        {q: "इंटरनेशनल हीट वेव वर्कशॉप 2026 का आयोजन कब हुआ?", o: ["7-8 जनवरी", "30-31 जनवरी", "11-12 फरवरी", "20-21 फरवरी"], a: 3, e: "यह 20-21 फरवरी 2026 को आयोजित हुआ। [cite: 313, 314]"},
+        {q: "CSIR-राष्ट्रीय भूभौतिकीय अनुसंधान संस्थान (NGRI) कहाँ स्थित है?", o: ["हैदराबाद", "बेंगलुरु", "नई दिल्ली", "कोलकाता"], a: 0, e: "NGRI हैदराबाद में स्थित है। [cite: 315, 316]"},
+        {q: "ऋतु तथा वायुमंडलीय परिस्थितियों के अवलोकन से संबंधित विज्ञान की शाखा है:", o: ["जलवायु विज्ञान", "समुद्र विज्ञान", "मौसम विज्ञान", "भूकंप विज्ञान"], a: 2, e: "मौसम विज्ञान (Meteorology) वायुमंडल का अध्ययन है। [cite: 319, 320]"},
+        {q: "INSAT श्रृंखला का पहला पूर्णतः कार्यशील उपग्रह कौन सा था?", o: ["INSAT-1A", "INSAT-1B", "IRS-1A", "APPLE"], a: 1, e: "INSAT-1B (30 अगस्त 1983) पहला पूर्णतः कार्यशील उपग्रह बना। [cite: 322, 323]"},
+        {q: "ग्रुप कैप्टन शुभांशु शुक्ला ने जून 2025 में क्या उपलब्धि हासिल की?", o: ["चंद्र मिशन नेतृत्व", "प्रथम स्पेस वॉक", "ISS पर कदम रखने वाले पहले भारतीय", "मंगल मिशन पायलट"], a: 2, e: "वे ISS पर कदम रखने वाले पहले भारतीय और मिशन पायलट बने। [cite: 325, 326]"},
+        {q: "चंद्रयान-3 की लैंडिंग स्थल की विशेषता क्या थी?", o: ["दक्षिण ध्रुवीय क्षेत्र", "विषुवतीय क्षेत्र", "उत्तरी ध्रुव", "चंद्रमा का दूरस्थ भाग"], a: 0, e: "यह चंद्रमा के दक्षिण ध्रुवीय क्षेत्र में उतरा था। [cite: 328, 329]"},
+        {q: "मस्तिष्क का कौन-सा भाग शरीर के तापमान को नियंत्रित करता है?", o: ["मेड्युला", "सेरेब्रम", "हाइपोथैलेमस", "सेरीबेलम"], a: 2, e: "हाइपोथैलेमस ताप, भूख और प्यास का केंद्र है। [cite: 330, 331]"},
+        {q: "कंप्यूटर में EPROM का पूरा नाम क्या है?", o: ["Electrically", "Electronically", "Extended", "Erasable"], a: 3, e: "Erasable Programmable Read-Only Memory. [cite: 332, 333]"},
+        {q: "निम्नलिखित में से कौन-सी एक AI भाषा नहीं है?", o: ["LISP", "OOP", "PROLOG", "VBI"], a: 1, e: "OOP (Object Oriented Programming) एक पद्धति है, AI भाषा नहीं। [cite: 335, 336]"},
+        {q: "LED का विस्तृत रूप क्या है?", o: ["Display", "Electronic", "Diode", "Liquid"], a: 2, e: "Light Emitting Diode. [cite: 337, 338]"},
+        {q: "MP का 'ई-मार्ग' (eMARG) समाधान किसके लिए NOC देता है?", o: ["फसलों की आवाजाही", "वाहनों की आवाजाही", "खनिजों की आवाजाही", "मदिरा की आवाजाही"], a: 0, e: "फसलों के राज्य से बाहर परिवहन हेतु। [cite: 339, 340]"},
+        {q: "HTML का क्या अर्थ है?", o: ["High Text", "Hyper Text Machine", "High Text Markup", "Hyper Text Markup Language"], a: 3, e: "Hyper Text Markup Language. [cite: 341, 342]"},
+        {q: "कंप्यूटर का बुनियादी फर्मवेयर 'BIOS' का अर्थ है:", o: ["Binary", "Basic Input/Output System", "Bit", "Byte"], a: 1, e: "Basic Input/Output System. [cite: 343, 344]"},
+        {q: "'आर्टिफिशियल इंटेलिजेंस' शब्द का सर्वप्रथम प्रयोग किसने किया?", o: ["जॉन विंस्टन", "रिचर्ड इवांस", "हेनरी सेम्युएल", "जॉन मैकार्थी"], a: 3, e: "जॉन मैकार्थी ने 1956 में यह शब्द दिया। [cite: 346, 347]"},
+        {q: "ऑप्टिकल फाइबर की 'स्प्लाइसिंग' (Splicing) का क्या अर्थ है?", o: ["मोड़ना", "खींचना", "जोड़ना", "काटना"], a: 2, e: "इसका अर्थ दो फाइबरों को जोड़ना है। [cite: 348]"},
+        {q: "'ई-अनुज्ञा' (e-ANUGYA) किसके लिए प्रमाण पत्र प्रदान करती है?", o: ["फसलों का परिवहन", "वाहनों का परिवहन", "खनिजों का परिवहन", "मदिरा का परिवहन"], a: 2, e: "खनिजों के मध्य प्रदेश से बाहर परिवहन हेतु। [cite: 350, 351]"},
+        {q: "URL का पूर्ण रूप क्या है?", o: ["Uniform Location", "Universal Location", "Uniform Resource Locator", "Universal Locator"], a: 2, e: "Uniform Resource Locator. [cite: 352, 353]"},
+        {q: "मलखंभ के लिए MP सरकार कौन-सा पुरस्कार देती है?", o: ["प्रभाष जोशी", "वेद प्रताप", "आलोक मेहता", "कैलाश चन्द्र"], a: 0, e: "प्रभाष जोशी खेल पुरस्कार मलखंभ हेतु दिया जाता है। [cite: 355, 356]"},
+        {q: "14 जनवरी 2026 को सर्जियो गौर किस देश के राजदूत नियुक्त हुए?", o: ["इटली", "USA", "फ्रांस", "जर्मनी"], a: 3, e: "वे भारत में जर्मनी के राजदूत बने। [cite: 358, 359]"},
+        {q: "मोहन नागर को 2026 में पद्मश्री किस क्षेत्र हेतु मिला?", o: ["खेल", "राजनीति", "उद्योग", "पर्यावरण संरक्षण"], a: 3, e: "पर्यावरण संरक्षण में उत्कृष्ट योगदान हेतु। [cite: 360, 361]"},
+        {q: "2026 महिला T20 वर्ल्ड कप की मेजबानी कौन करेगा?", o: ["भारत-श्रीलंका", "ऑस्ट्रेलिया-दक्षिण अफ्रीका", "इंग्लैंड-वेल्स", "NZ-वेस्टइंडीज"], a: 1, e: "ऑस्ट्रेलिया और दक्षिण अफ्रीका संयुक्त रूप से। [cite: 363, 364]"},
+        {q: "स्वस्थ नारी, सशक्त परिवार अभियान का शुभारंभ कहाँ से हुआ?", o: ["भोपाल", "इन्दौर", "धार", "उज्जैन"], a: 3, e: "प्रधानमंत्री ने उज्जैन से इसका शुभारंभ किया। [cite: 366, 367]"},
+        {q: "वित्तीय क्षेत्र में योगदान हेतु 2026 में पद्म भूषण किसे मिला?", o: ["अजय पिरामल", "उदय कोटक", "दीपक पारेख", "रघुराम राजन"], a: 1, e: "उदय कोटक को यह सम्मान दिया गया। [cite: 369, 370]"},
+        {q: "'सुमन सखी चैटबॉट' किस क्षेत्र की पहल है?", o: ["शिक्षा", "स्वास्थ्य", "परिवहन", "रक्षा"], a: 1, e: "यह स्वास्थ्य क्षेत्र में महिलाओं की मदद हेतु पहल है। [cite: 372, 373]"},
+        {q: "साहित्योत्सव 2026 की थीम क्या थी?", o: ["Poetry", "Letters", "Story", "Folklore"], a: 1, e: "थीम 'फेस्टिवल ऑफ लेटर्स' रखी गई थी। [cite: 375, 376]"},
+        {q: "CPI (उपभोक्ता मूल्य सूचकांक) का नया आधार वर्ष क्या है?", o: ["2011", "2012", "2023", "2024"], a: 2, e: "नया आधार वर्ष 2023 निर्धारित हुआ है। [cite: 378, 379]"},
+        {q: "UN द्वारा 2025 को किस अंतर्राष्ट्रीय वर्ष के रूप में घोषित किया गया?", o: ["वन", "बाजरा", "सतत् ऊर्जा", "सहकारिता"], a: 2, e: "अंतर्राष्ट्रीय सतत् ऊर्जा वर्ष 2025। [cite: 380, 381]"},
+        {q: "सभा और समिति को प्रजापति की दो पुत्रियां किसमें कहा गया?", o: ["अग्नि", "प्रजापति", "वरूण", "रूद्र"], a: 1, e: "वैदिक साहित्य/अथर्ववेद में उल्लेख है। [cite: 383, 384]"},
+        {q: "बंगाल में तेभागा आन्दोलन कब शुरू हुआ?", o: ["सितंबर 1946", "अगस्त 1945", "जनवरी 1938", "मार्च 1935"], a: 0, e: "सितंबर 1946 में बटाईदार किसानों द्वारा। [cite: 385, 387]"},
+        {q: "चारों आश्रमों का सर्वप्रथम उल्लेख किस उपनिषद में है?", o: ["ऋग्वेद", "छांदोग्योपनिषद", "मनुस्मृति", "महाभारत"], a: 1, e: "छांदोग्योपनिषद में पहली बार चारों आश्रम वर्णित हैं। [cite: 389, 390]"},
+        {q: "1918 में संयुक्त प्रांत किसान सभा की स्थापना किसने की?", o: ["मालवीय", "बाबा राम चन्द्र", "इन्द्र नारायण", "झिंगुरी सिंह"], a: 1, e: "बाबा राम चन्द्र द्वारा स्थापित। [cite: 391, 392]"},
+        {q: "कृष्ण-बलराम का अंकन किस हिन्द-यवन मुद्राओं पर मिलता है?", o: ["मेनान्डर", "डेमेट्रियस", "अगाथोक्लिज़", "युक्रेटाइड्स"], a: 2, e: "अगाथोक्लिज़ की मुद्राओं पर। [cite: 393, 394]"},
+        {q: "एकमात्र महिला आलवार संत कौन थीं?", o: ["मधुर कवि", "पेरुमल", "तिरुपान", "आण्डाल"], a: 3, e: "आण्डाल एकमात्र महिला आलवार संत थीं। [cite: 395, 396]"},
+        {q: "संस्कृत साहित्य में 'यवनप्रिय' किसे कहा गया?", o: ["अदरक", "जायफल", "काली मिर्च", "इलायची"], a: 2, e: "काली मिर्च को यूनानी बहुत पसंद करते थे। [cite: 398, 399]"},
+        {q: "भारतवर्ष का उल्लेख किस अभिलेख में सर्वप्रथम है?", o: ["धनदेव का अयोध्या", "मेहरौली", "गरुड़ध्वज", "हाथीगुम्फा"], a: 0, e: "धनदेव के अयोध्या अभिलेख में प्राप्त होता है। [cite: 400, 401]"},
+        {q: "'द फिलांसफी ऑफ द बॉम्ब' किसने तैयार किया?", o: ["बिस्मिल", "सुखदेव", "राजगुरु", "भगवती चरण वोहरा"], a: 3, e: "वोहरा ने चन्द्रशेखर आजाद के अनुरोध पर तैयार किया। [cite: 403, 404]"},
+        {q: "'द सीक्रेट डॉक्ट्रिन' के लेखक कौन थे?", o: ["राम मोहन रॉय", "एच.पी. ब्लावत्स्की", "केशव चन्द्र सेन", "कर्वे"], a: 1, e: "एच.पी. ब्लावत्स्की (थियोसोफिकल सोसाइटी)। [cite: 406, 407]"},
+        {q: "2011 जनगणना अनुसार कमार जनजाति की संख्या MP में कितनी थी?", o: ["266", "466", "666", "866"], a: 2, e: "कुल संख्या 666 दर्ज की गई थी। [cite: 409, 410]"},
+        {q: "MP में कितनी जनजातियां हैं (PVTGs को छोड़कर)?", o: ["46", "45", "44", "43"], a: 3, e: "कुल 43 जनजातियां (विशेष कमजोर समूहों को छोड़)। [cite: 411, 412]"},
+        {q: "इंदल पूजा का सम्बन्ध किस जनजाति से है?", o: ["बारेला", "गोंड", "बैगा", "सहरिया"], a: 2, e: "बैगा जनजाति से संबंधित है। [cite: 414, 415]"},
+        {q: "आदिवासी वाद्य 'गुदुम बाजा' किस जिले से संबंधित है?", o: ["शहडोल", "छिन्दवाड़ा", "मण्डला", "झाबुआ"], a: 3, e: "झाबुआ जिले के आदिवासियों का वाद्य यंत्र। [cite: 417, 418]"},
+        {q: "ST छात्रों हेतु विदेश शिक्षा की आय सीमा 2024-25 में क्या थी?", o: ["6 लाख", "8 लाख", "10 लाख", "15 लाख"], a: 1, e: "वार्षिक आय सीमा 8 लाख रुपये निर्धारित थी। [cite: 420, 421]"},
+        {q: "TRIFED की स्थापना किस वर्ष हुई?", o: ["1986", "1987", "1988", "1989"], a: 1, e: "ट्राइफेड की स्थापना 1987 में हुई। [cite: 422, 423]"},
+        {q: "जनजातीय सलाहकार समिति का गठन किस अनुसूची के तहत होता है?", o: ["3", "4", "5", "6"], a: 2, e: "पांचवीं अनुसूची के प्रावधानों के तहत। [cite: 424, 425]"},
+        {q: "देश की कुल ST जनसंख्या का कितना प्रतिशत MP में रहता है?", o: ["31.84", "29.25", "28.16", "14.69"], a: 3, e: "लगभग 14.69% जनसंख्या MP में निवास करती है। [cite: 427, 428]"},
+        {q: "गोंड जनजाति में 'बारी' का सम्बन्ध किससे है?", o: ["खेल", "खेती", "विवाह", "धार्मिक"], a: 2, e: "यह विवाह की एक रस्म है। [cite: 429, 431]"},
+        {q: "'नेतम' शब्द का सम्बन्ध किससे है?", o: ["टेबू", "टोटम", "विवाह", "नाम"], a: 1, e: "यह गोंड जनजाति का एक टोटम है। [cite: 431, 433]"},
+        {q: "MP में पहला शक्कर कारखाना कहाँ खुला?", o: ["कैलारस", "सीहोर", "डबरा", "जावरा"], a: 3, e: "प्रथम शक्कर कारखाना जावरा में स्थापित हुआ। [cite: 435, 436]"},
+        {q: "डोंगला मीन टाइम (DMT) रिसर्च के लिए चर्चित डोंगला गाँव कहाँ है?", o: ["देवास", "उज्जैन", "धार", "बड़वानी"], a: 1, e: "उज्जैन जिले में स्थित है। [cite: 438, 439]"},
+        {q: "2021-22 में दाल उत्पादन में MP का देश में स्थान था:", o: ["प्रथम", "द्वितीय", "तृतीय", "चतुर्थ"], a: 0, e: "MP दाल उत्पादन में प्रथम स्थान पर रहा। [cite: 441, 442]"},
+        {q: "चम्बल बेसिन में मुख्य रूप से कौन-सी मिट्टी मिलती है?", o: ["लाल-पीली", "लेटेराइट", "जलोढ़", "लाल दोमट"], a: 2, e: "चम्बल बेसिन में उपजाऊ जलोढ़ (Alluvial) मिट्टी है। [cite: 443, 444]"}
+    ];
+
+    let current = 0, userAns = new Array(questions.length).fill(null);
+
+    function startTest() { document.getElementById('instruction-page').style.display = 'none'; initPal(); loadQ(); }
+    function initPal() { 
+        const g = document.getElementById('palette-grid');
+        questions.forEach((_,i)=>{
+            const d = document.createElement('div'); d.className='dot'; d.id='dot-'+i; d.innerText=i+1;
+            d.onclick=()=>{current=i; loadQ(); togglePalette();}; g.appendChild(d);
+        });
+    }
+    function loadQ() {
+        const q = questions[current]; document.getElementById('q-num').innerText = `Question ${current+1}`;
+        document.getElementById('q-text').innerText = q.q;
+        const box = document.getElementById('options-box'); box.innerHTML = '';
+        q.o.forEach((opt,i)=>{
+            const l = document.createElement('label'); l.className = `opt-label ${userAns[current]===i?'selected':''}`;
+            l.innerHTML = `<input type="radio" style="display:none" onchange="userAns[${current}]=${i}; loadQ()"> ${opt}`;
+            box.appendChild(l);
+        });
+        document.querySelectorAll('.dot').forEach(d=>d.classList.remove('active-dot'));
+        document.getElementById('dot-'+current).classList.add('active-dot');
+        document.getElementById('scroll-area').scrollTop = 0;
+    }
+    function handleAction(t) {
+        const d = document.getElementById('dot-'+current);
+        if(t==='save') { d.className = userAns[current]!==null?'dot ans-dot':'dot not-ans-dot'; if(current<questions.length-1){current++; loadQ();} }
+        else if(t==='review') { d.className = 'dot rev-dot'; if(current<questions.length-1){current++; loadQ();} }
+        else if(t==='clear') { userAns[current]=null; d.className='dot'; loadQ(); }
+    }
+    function togglePalette() { document.getElementById('palette-panel').classList.toggle('closed'); }
+    function finishExam() {
+        if(!confirm("Are you sure you want to Submit?")) return;
+        document.getElementById('result-page').style.display = 'block';
+        let c=0, w=0;
+        const sheet = document.getElementById('ans-sheet');
+        questions.forEach((q,i)=>{
+            const correct = userAns[i]===q.a; if(userAns[i]!==null) correct?c++:w++;
+            sheet.innerHTML += `<div style="padding:15px; border-bottom:2px solid #ddd">
+                <p><b>Q${i+1}: ${q.q}</b></p>
+                <p style="color:green">✔ Correct: ${q.o[q.a]}</p>
+                <p style="color:${correct?'green':'red'}">✖ Your Answer: ${userAns[i]!==null?q.o[userAns[i]]:'Skipped'}</p>
+                <div class="explanation"><b>Fact:</b> ${q.e}</div></div>`;
+        });
+        document.getElementById('score-text').innerHTML = `Final Score: <b>${c*2}</b> / ${questions.length*2}`;
+        new Chart(document.getElementById('chart'), {type:'doughnut', data:{labels:['Correct','Wrong','Skipped'], datasets:[{data:[c,w,questions.length-(c+w)], backgroundColor:['#27ae60','#e74c3c','#bdc3c7']}]}});
+    }
+</script>
+</body>
+</html>
