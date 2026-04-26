@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MPPSC Exam Portal - Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary: #002c5f;
+            --secondary: #1e88e5;
+            --accent: #ff9800;
+            --light: #f8f9fa;
+            --text: #333;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            margin: 0;
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* Hero Section */
+        header {
+            background: var(--primary);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+            border-bottom-left-radius: 30px;
+            border-bottom-right-radius: 30px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        header h1 { margin: 0; font-size: 1.8rem; letter-spacing: 1px; }
+        header p { opacity: 0.8; font-weight: 300; margin-top: 5px; }
+
+        /* Stats Bar */
+        .stats-container {
+            display: flex;
+            justify-content: space-around;
+            max-width: 900px;
+            margin: -30px auto 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .stat-item { text-align: center; }
+        .stat-item span { display: block; font-size: 1.2rem; font-weight: bold; color: var(--secondary); }
+        .stat-item label { font-size: 0.7rem; text-transform: uppercase; color: #777; }
+
+        /* Search Box */
+        .search-area {
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        .search-bar {
+            width: 100%;
+            padding: 15px 25px;
+            border-radius: 30px;
+            border: none;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            font-size: 1rem;
+            outline: none;
+        }
+
+        /* Test Cards Grid */
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+
+        .test-card {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .test-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+        }
+
+        .test-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 6px; height: 100%;
+            background: var(--secondary);
+        }
+
+        .test-card i {
+            font-size: 2rem;
+            color: var(--secondary);
+            margin-bottom: 15px;
+            opacity: 0.8;
+        }
+
+        .test-card h3 {
+            margin: 0;
+            font-size: 1.1rem;
+            color: var(--primary);
+            line-height: 1.4;
+        }
+
+        .test-card .meta {
+            font-size: 0.8rem;
+            color: #777;
+            margin-top: 10px;
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn-start {
+            margin-top: 20px;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            color: white;
+            text-align: center;
+            padding: 12px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: 0.3s;
+        }
+
+        .btn-start:hover { opacity: 0.9; box-shadow: 0 5px 15px rgba(30, 136, 229, 0.4); }
+
+        /* Loader */
+        #loader { text-align: center; padding: 50px; font-weight: bold; color: var(--primary); }
+
+        @media (max-width: 600px) {
+            .test-grid { grid-template-columns: 1fr; }
+            header h1 { font-size: 1.4rem; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1><i class="fas fa-graduation-cap"></i> MPPSC PRE 2026</h1>
+    <p>Premium Test Series Dashboard</p>
+</header>
+
+<div class="stats-container">
+    <div class="stat-item">
+        <span id="test-count">0</span>
+        <label>Total Tests</label>
+    </div>
+    <div class="stat-item">
+        <span>Active</span>
+        <label>Status</label>
+    </div>
+    <div class="stat-item">
+        <span>Free</span>
+        <label>Plan</label>
+    </div>
+</div>
+
+<div class="search-area">
+    <input type="text" class="search-bar" id="searchInput" placeholder="Search for a test (e.g. History, MP GK)..." onkeyup="filterTests()">
+</div>
+
+<div id="loader">
+    <i class="fas fa-spinner fa-spin"></i> Fetching latest tests...
+</div>
+
+<div class="test-grid" id="test-grid">
+    </div>
+
+<script>
+    // GitHub Repo Configuration
+    const username = "araavsirgcom-dev"; 
+    const repo = "Mpscexam";
+
+    async function loadTests() {
+        const url = `https://api.github.com/repos/${username}/${repo}/contents/`;
+        try {
+            const response = await fetch(url);
+            const files = await response.json();
+            const grid = document.getElementById('test-grid');
+            const loader = document.getElementById('loader');
+            
+            let htmlFiles = files.filter(f => f.name.endsWith('.html') && f.name !== 'index.html');
+            
+            loader.style.display = 'none';
+            document.getElementById('test-count').innerText = htmlFiles.length;
+
+            if(htmlFiles.length === 0) {
+                grid.innerHTML = "<p style='text-align:center; grid-column: 1/-1;'>No tests found in the repository.</p>";
+                return;
+            }
+
+            htmlFiles.forEach(file => {
+                // Formatting name (e.g., "mppsc_gk_test.html" -> "MPPSC GK TEST")
+                const cleanName = file.name.replace('.html', '').replace(/_/g, ' ').toUpperCase();
+                
+                const card = document.createElement('div');
+                card.className = 'test-card';
+                card.innerHTML = `
+                    <div>
+                        <i class="fas fa-file-alt"></i>
+                        <h3>${cleanName}</h3>
+                        <div class="meta">
+                            <span><i class="fas fa-clock"></i> 120 Min</span>
+                            <span><i class="fas fa-question-circle"></i> 100 Qs</span>
+                        </div>
+                    </div>
+                    <a href="${file.name}" class="btn-start">START TEST <i class="fas fa-arrow-right"></i></a>
+                `;
+                grid.appendChild(card);
+            });
+
+        } catch (error) {
+            console.error("API Error:", error);
+            document.getElementById('loader').innerHTML = "Error loading tests. Check your internet or GitHub Repo.";
+        }
+    }
+
+    function filterTests() {
+        let input = document.getElementById('searchInput').value.toLowerCase();
+        let cards = document.getElementsByClassName('test-card');
+        
+        for (let i = 0; i < cards.length; i++) {
+            let title = cards[i].getElementsByTagName('h3')[0].innerText.toLowerCase();
+            cards[i].style.display = title.includes(input) ? "" : "none";
+        }
+    }
+
+    window.onload = loadTests;
+</script>
+
+</body>
+</html>
